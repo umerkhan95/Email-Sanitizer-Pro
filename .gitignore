@@ -1,0 +1,22 @@
+# Ignore script with API key
+run_with_key.sh
+
+# Ignore output files
+Cleaned_Emails.csv
+Invalid_Emails.csv
+Fixed_Emails.txt
+
+# Python related files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+
+# Ignore documentation folder
+documentation/
+
+# Ignore common files
+.DS_Store
