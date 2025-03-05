@@ -27,8 +27,19 @@ pip install -r requirements.txt
 
 ## Usage
 
-```python
-python clean_natura_emails.py [input_file] [output_file]
+```bash
+python email_sanitizer.py input_file.csv output_directory
+```
+
+## Configuration
+
+Create a `.env` file based on the provided `.env.example` with your configuration:
+
+```
+VALIDATION_MODE=strict  # or 'lenient'
+BATCH_SIZE=20
+DNS_TIMEOUT=5  # timeout in seconds for DNS queries
+MAX_DOMAIN_FREQUENCY=20  # maximum number of emails allowed from same domain
 ```
 
 ## License

@@ -12,10 +12,10 @@ import unicodedata
 print("Starting email cleaning process with enhanced Squarespace compatibility...")
 
 # File paths
-input_csv = "/Users/umerkhan/code/ory/ory-chatbot/Natura Email.csv"
-output_csv = "/Users/umerkhan/code/ory/ory-chatbot/clean_natura_emails.csv"
-squarespace_csv = "/Users/umerkhan/code/ory/ory-chatbot/squarespace_emails.csv"
-rejected_csv = "/Users/umerkhan/code/ory/ory-chatbot/rejected_natura_emails.csv"
+input_csv = "/path to your email.csv"
+output_csv = "/path to your email.csv"
+squarespace_csv = "/path to your email.csv"
+rejected_csv = "/path to your email.csv"
 
 # Initialize variables
 valid_emails = set()

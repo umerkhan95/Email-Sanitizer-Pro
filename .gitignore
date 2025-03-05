@@ -1,5 +1,6 @@
 # Ignore script with API key
 run_with_key.sh
+.env
 
 # Ignore output files
 Cleaned_Emails.csv
