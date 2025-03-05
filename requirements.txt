@@ -21,7 +21,7 @@ Crawl4AI==0.5.0.post2
 cryptography==44.0.2
 cssselect==1.2.0
 distro==1.9.0
-dnspython==2.7.0
+dnspython==2.6.1
 etelemetry==0.3.1
 exceptiongroup==1.2.2
 fake-http-header==0.3.5
