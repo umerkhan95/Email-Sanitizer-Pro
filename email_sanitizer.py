@@ -7,15 +7,25 @@ import time
 from collections import Counter
 import os
 import unicodedata
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
+
+# Get validation mode from environment variables
+VALIDATION_MODE = os.getenv('VALIDATION_MODE', 'strict').lower()
+MAX_DOMAIN_FREQUENCY = int(os.getenv('MAX_DOMAIN_FREQUENCY', 20))
+DNS_TIMEOUT = int(os.getenv('DNS_TIMEOUT', 5))
+
+print(f"Starting email cleaning process with {VALIDATION_MODE} validation mode...")
 # Setup
 print("Starting email cleaning process with enhanced Squarespace compatibility...")
 
 # File paths
-input_csv = "/path to your email.csv"
-output_csv = "/path to your email.csv"
-squarespace_csv = "/path to your email.csv"
-rejected_csv = "/path to your email.csv"
+input_csv = "path_to_your_email.csv"
+output_csv = "path_to_your_email.csv"
+squarespace_csv = "path_to_your_email.csv"
+rejected_csv = "path_to_your_email.csv"
 
 # Initialize variables
 valid_emails = set()
@@ -30,7 +40,7 @@ temporary_emails = set()
 total_emails = 0
 
 # Even more strict email regex - RFC 5322 compliant plus additional restrictions
-EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._%+-]{0,63}@[a-zA-Z0-9.-]{1,253}\.[a-zA-Z]{2,}$")
+EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._%+-]{0,63}@[a-zA-Z0-9][a-zA-Z0-9.-]{0,252}\.[a-zA-Z]{2,}$")
 
 # Patterns that might indicate spam emails - expanded
 SPAM_PATTERNS = [
@@ -79,6 +89,11 @@ SPAM_PATTERNS = [
     r'^no-?reply@',            # No reply addresses
     r'^[a-z0-9]{10,}@',        # Very long random-looking usernames
     r'^([a-z])\1{2,}@',        # Repeated characters (aaa@ etc.)
+    r'^test[0-9]*@',
+    r'^example[0-9]*@',
+    r'^spam[0-9]*@',
+    r'@example\.',
+    r'@test\.'
 ]
 SPAM_REGEX = re.compile('|'.join(SPAM_PATTERNS), re.IGNORECASE)
 
@@ -208,7 +223,9 @@ RELIABLE_DOMAINS = [
     'posteo.de', 'mailbox.org', 'fastmail.com', 'yahoo.fr',
     'yahoo.de', 'yahoo.co.uk', 'yahoo.it', 'msn.com', 'live.com',
     'hotmail.de', 'hotmail.fr', 'hotmail.co.uk', 'mac.com',
-    'me.com', 'aol.de', 'mail.com', 'posteo.net', 'posteo.eu'
+    'me.com', 'aol.de', 'mail.com', 'posteo.net', 'posteo.eu',
+    'freenet.de', 'berlin.de', 'arcor.de', 'gmx.com', 'gmx.at',
+    'gmx.ch', 'gmx.fr', 'gmx.es', 'gmx.co.uk', 'gmx.us', 'gmx.net','email.de'
 ]
 
 # Common company email domains that are generally reliable
@@ -309,7 +326,11 @@ def has_invalid_username_format(local_part):
     return False
 
 def is_common_typo_domain(domain):
-    """Check for common typos in popular email domains"""
+    # Skip checking reliable domains
+    if domain in RELIABLE_DOMAINS:
+        return False
+        
+    # Rest of your typo detection code...
     typo_patterns = {
         r'g?ma?il?[.-]?c?o?m?': 'gmail.com',
         r'ho?t?ma?il?[.-]?c?o?m?': 'hotmail.com',
@@ -324,7 +345,7 @@ def is_common_typo_domain(domain):
     }
     
     for pattern, correct in typo_patterns.items():
-        if re.match(pattern, domain, re.IGNORECASE) and domain.lower() != correct:
+        if pattern in domain:
             return True
     
     return False
@@ -395,9 +416,14 @@ with open(input_csv, "r", newline='', encoding='utf-8') as csvfile:
                     invalid_format_emails.add(email)
                     continue
                 
-                # Spam pattern check
-                if SPAM_REGEX.search(email_lower):
+                # Consider validation mode when checking spam patterns
+                if VALIDATION_MODE == 'strict' and SPAM_REGEX.search(email_lower):
                     print(f"Spam pattern detected: {email}")
+                    spam_emails.add(email)
+                    continue
+                elif VALIDATION_MODE == 'lenient' and email_lower.startswith(('test@', 'example@', 'spam@')):
+                    # Only flag the most obvious spam in lenient mode
+                    print(f"Obvious spam detected: {email}")
                     spam_emails.add(email)
                     continue
                 
@@ -425,17 +451,16 @@ with open(input_csv, "r", newline='', encoding='utf-8') as csvfile:
                     typo_domain_emails.add(email)
                     continue
                 
-                # Domain popularity check (increased threshold to 20)
-                # Skip this check for reliable domains
-                if (domain_counter[domain] > 20 and 
+                # Domain popularity check - use lenient threshold if configured
+                if (domain_counter[domain] > MAX_DOMAIN_FREQUENCY and 
                     domain not in RELIABLE_DOMAINS and 
                     domain not in RELIABLE_COMPANY_DOMAINS):
                     print(f"Unusual domain popularity: {email} (domain has {domain_counter[domain]} emails)")
                     duplicate_domain_emails.add(email)
                     continue
                 
-                # MX record check - no more skipping checks for reliable domains
-                if check_mx_records(domain):
+                # MX record check - skip for lenient mode or check with configured timeout
+                if VALIDATION_MODE == 'lenient' or check_mx_records(domain):
                     normalized = normalize_email(email_lower)
                     valid_emails.add(normalized)
                     print(f"Valid email: {email}")

@@ -21,3 +21,5 @@ documentation/
 
 # Ignore common files
 .DS_Store
+*.csv
+*.log
